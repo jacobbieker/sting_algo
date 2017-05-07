@@ -5,8 +5,9 @@ Using suffix tree for getting tandem repeats
 
 """
 from McM_suffix_tree_build import built_tree
-from util import print_tree
-import os, sys, time
+from tandem_repeat_finder import find_tandem_repeats
+from util import print_tree, compare_tandem_repeats_result
+import sys, time
 
 
 def search(tree, query, string):
@@ -102,13 +103,10 @@ def find_tandem_repeats(tree, string):
         return tandem_repeats
 
 
-
-
 if __name__ == "__main__":
     filename = sys.argv[1]
-    search_string = sys.argv[2]
 
-    verbose = len(sys.argv) > 3 and sys.argv[3] == '--verbose'
+    verbose = len(sys.argv) > 2 and sys.argv[2] == '--verbose'
 
     with open(filename, "r") as datafile:
         data = datafile.read().replace('\n', ' ')
@@ -119,7 +117,7 @@ if __name__ == "__main__":
         
         tree = built_tree(data, False)
 
-        if verbose:
+        if False and verbose:
             end = time.time()
             sys.stdout.write("\n")
             
@@ -130,17 +128,23 @@ if __name__ == "__main__":
             print("Size of suffix tree (on average): %i" % (sys.getsizeof(tree)/len(tree)))
             start = time.time()
 
-        result = search(tree, search_string,data)
+        result = find_tandem_repeats(tree, data)
 
         if verbose:
-            end = time.time()
-            print("Search Time: %f4" % (end - start))
-            sys.stdout.write("\n")
-        
-        result.sort()
+            out_str = ""
 
-        
-        for i in result:
-            sys.stdout.write("%i " % i)
+            if verbose:
+                end = time.time()
+                print("Search Time: %f4" % (end - start))
+                sys.stdout.write("\n")
+            
+            for i in result[0]:
+                out_str += "(%i,%i,2) non_branching\n" % i
+            
+            for i in result[1]:
+                out_str += "(%i,%i,2) branching\n" % i
 
-        sys.stdout.write("\n")
+            with open(filename[:-4] + ".out", 'r') as gt_fp:
+                compare_tandem_repeats_result(gt_fp, out_str.split('\n'), data)
+
+        sys.stdout.write("%i %i \n" % tuple([len(j) for j in result][::-1]))
